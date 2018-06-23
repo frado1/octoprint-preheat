@@ -40,10 +40,10 @@ class PreheatAPIPlugin(octoprint.plugin.TemplatePlugin,
 			preheat = []
 		)
 		
-	def parse_line(self, line):
+	def parse_line(self, line, tool):
 		line = strip_comment(line)
 		
-		tool = "tool0"
+		#tool = "tool0"
 		temperature = None
 		for item in line.split(" "):
 			if item.startswith("S"):
@@ -86,6 +86,7 @@ class PreheatAPIPlugin(octoprint.plugin.TemplatePlugin,
 	def get_temperatures(self):
 		printer = self._printer
 		
+		standardTool = "tool0"
 		enable_bed = self._settings.get_boolean(["enable_bed"])
 		enable_tool = self._settings.get_boolean(["enable_tool"])
 		
@@ -109,11 +110,13 @@ class PreheatAPIPlugin(octoprint.plugin.TemplatePlugin,
 					if line == "":
 						break
 					if enable_tool and (line.startswith("M104") or line.startswith("M109")):	# Set tool temperature
-						tool, temperature = self.parse_line(line)
+						tool, temperature = self.parse_line(line,standardTool)
 						if temperature != None and tool not in temperatures:
 							temperatures[tool] = temperature
+					if enable_tool and (line.startswith("T") and line[1].isdigit()):	# Set tool temperature
+						standardTool = "tool" + line[1]
 					if enable_bed and (line.startswith("M190") or line.startswith("M140")):	# Set bed temperature
-						_, temperature = self.parse_line(line)
+						_, temperature = self.parse_line(line,standardTool)
 						if temperature != None and "bed" not in temperatures:
 							temperatures["bed"] = temperature
 						
